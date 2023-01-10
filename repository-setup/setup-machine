@@ -55,6 +55,23 @@ function ensure_pip_dependencies() {
     done
 }
 
+function ensure_pipx_dependencies() {
+    
+    echo "PIPX INSTALLING: $1"
+    read -a dependency_list <<< $1 # Split the dependency string on spaces into a bash array
+
+    for nxt_dep in "${dependency_list[@]}"
+    do
+        PCHK_OUTPUT="$(pipx list | grep \"package $nxt_dep\")";
+        if [ "$(echo $?)" != 0 ]; then
+            echo "PipX Dependency ($nxt_dep): being installed"
+            sudo apt install $nxt_dep
+        else
+            echo "PipX Dependency ($nxt_dep): already installed"
+        fi
+    done
+}
+
 function ensure_system_dependencies () {
     dependencies=$1
     # Split off the system dependency install base on system type Linux, MacOS, Windows, etc
@@ -71,6 +88,13 @@ function ensure_pip_system_dependencies () {
     ensure_pip_dependencies "$dependencies"
 }
 
+function ensure_pipx_system_dependencies () {
+    dependencies=$1
+    # Split off the system dependency install base on system type Linux, MacOS, Windows, etc
+
+    # For now we only support Linux
+    ensure_pipx_dependencies "$dependencies"
+}
 
 # Run the dependency checks on the system
 echo "BASE DEPENDENCIES:"
@@ -81,6 +105,12 @@ echo
 echo "PIP SYSTEM DEPENDENCIES"
 PIP_SYSTEM_DEPENDENCIES=""
 ensure_pip_system_dependencies "$PIP_SYSTEM_DEPENDENCIES"
+echo
+echo "---------------------------------------------------------------------------------------"
+
+echo "PIPX DEPENDENCIES"
+PIPX_DEPENDENCIES="poetry"
+ensure_pipx_system_dependencies "$PIPX_DEPENDENCIES"
 echo
 echo "---------------------------------------------------------------------------------------"
 

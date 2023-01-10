@@ -103,44 +103,23 @@ echo
 echo "---------------------------- VIRTUAL ENVIRONMENT CREATION -----------------------------"
 if [ ! -f $INITIALIZED_FILE ]; then
 
-    virtualenv -p python3 $VIRTUAL_ENV_DIR
+    pushd $REPOSITORY_DIR
 
-    if [ -f $VIRTUAL_ENV_DIR/bin/activate ]; then
-        source $VIRTUAL_ENV_DIR/bin/activate
-
-        # MSCODE Environment Dependencies
-        pip3 install rope
-        pip3 install debugpy
-        pip3 install pycrunch-trace
-
-        # Install pylint into the virtual environment
-        pip3 install coverage
-        pip3 install cython
-        pip3 install click<8.0
-        pip3 install rich
-        pip3 install ipython
-       
-        # Development Modules
-        pip3 install "docutils<0.17" # We need this for sphinx_rtd_theme
-        pip3 install myst-parser
-        pip3 install sphinx
-        pip3 install sphinx_rtd_theme
-
-        if [ -f $REQUIREMENTS_FILE ]; then
-            # Install dependencies into the virtual environment
-            pip3 install -r $REQUIREMENTS_FILE
-        fi
-
-	customize_activate_script
-
-        touch $INITIALIZED_FILE
-
-        # Exit the virtual environment
-        deactivate
+    if [ ! -f $VIRTUAL_ENV_DIR/bin/activate ]; then
+        
+        poetry env use $PYTHON_VERSION
     else
         echo "ERROR: Unable to create or find the python virtual environment"
         exit 1
     fi
+
+    poetry update
+
+    popd
+
+    customize_activation_scripts
+
+    touch $INITIALIZED_FILE
 
 else
     echo "Virtual environment already intialized..."
