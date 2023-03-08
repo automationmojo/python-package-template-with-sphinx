@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "<package name>"
 description = "<package description>"
-version = "0.3.1"
+version = "0.0.1"
 authors = []
 readme = "README.md"
 license = "LICENSE.txt"
@@ -11,15 +11,7 @@ classifiers = [
     "Operating System :: POSIX"
 ]
 keywords = [
-    "automation",
-    "continuous-integration",
-    "distributed-test-framework",
-    "distributed-testing-tools",
-    "distributed-testing",
-    "test-automation",
-    "test-framework",
-    "testing",
-    "testing-tools"
+    "python"
 ]
 packages = [{include = "source/packages"}]
 
@@ -49,18 +41,11 @@ flask-migrate = "^4.0.1"
 flask-restx = "^1.0.3"
 
 [tool.poetry.group.dev.dependencies]
-cython = "^0.29.33"
 myst-parser = "^0.18.1"
 sphinx = ">=1.6,<6"
 sphinx-rtd-theme = "^1.1.1"
-sqlalchemy = "^1.4.46"
-sqlalchemy-utils = "^0.39.0"
-
 
 [tool.poetry.group.dbio.dependencies]
-psycopg2 = "^2.9.5"
-sqlalchemy = "^1.4.46"
-sqlalchemy-utils = "^0.39.0"
 
 [build-system]
 requires = ["poetry-core"]
