@@ -19,8 +19,6 @@
             "${TMPLT:REPOSITORY_FOLDER}/.venv/lib/${TMPLT:PYTHON_VERSION}/site-packages",
             "${TMPLT:REPOSITORY_FOLDER}/source/packages"
         ],
-        "restructuredtext.confPath": "${TMPLT:REPOSITORY_FOLDER}/source/sphinx/docsrc",
-        "restructuredtext.builtDocumentationPath": "${TMPLT:REPOSITORY_FOLDER}/docs",
         "python.terminal.activateEnvInCurrentTerminal": true
     }
 }
