@@ -8,6 +8,7 @@ import sys
 import subprocess
 
 PROJECT_NAME="(Not Set)"
+REPOSITORY_NAME="(Not Set)"
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 THIS_MODULE = sys.modules[__name__]
@@ -30,6 +31,9 @@ if os.path.exists(REPOSITORY_CONFIG_FILE):
 
         if "PROJECT_NAME" in default_config:
             PROJECT_NAME = default_config["PROJECT_NAME"]
+            
+        if "REPOSITORY_NAME" in default_config:
+            REPOSITORY_NAME = default_config["REPOSITORY_NAME"]
 
         if "PYTHON_VERSION" in default_config:
             PYTHON_VERSION = default_config["PYTHON_VERSION"]
