@@ -26,6 +26,7 @@ How to Use This Template
 - Modify the pyproject.toml file with the correct package-name, author, publishing information, etc.
 - Rename the VSCODE workspace file 'mv workspaces/default-workspace.template workspaces/(project name).template'
 - Replace the README.rst file with your own README
+- Update the LICENSE.txt file with your copyright information and license.
 - Add your dependencies with python poetry 'poetry add (dependency name)'
 - Drop your package code in 'source/packages'
 - Modify the name of your package root in 'pyproject.toml'
