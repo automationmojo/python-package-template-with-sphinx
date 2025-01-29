@@ -1,6 +1,35 @@
 #!/usr/bin/env python3
+'''
+    The 'rehome-repository' script is used to setup the development environment for a package.  It walks through the 'workspaces'
+    folder and creates a '.vscode' project file for each '.template'.  It replaces macros in the '.template' files when it creates
+    the corresponding '.vscode'.   It also creates an .env file that sets custome development environment variables for the end user.
+
+    The rehome-repository script can be extended by creating a 'rehome_repository_ext.py' module and by implementing one of the
+    following folders:
+
+    Possible Extension Functions:
+
+        def macro_lookup_ext(macro_lookup: OrderedDict) -> None:
+            """
+                Called in order to update and customize the macro lookup dictionary with updated template macros.
+            """
+
+        def python_path_ext(python_path: str) -> str:
+            """
+                Called with the value that will be set for PYTHON_PATH.  When called this function should either
+                prepend or append the 'python_path' string and then return the modified path.
+            """
+        
+        def development_environment_ext(envf: RawIOBase) -> None:
+            """
+                Called with a writable file that is open for writing to the '.env' file.  This method is used
+                to write custom environment variables.
+            """
+
+'''
 
 import argparse
+import collections
 import configparser
 import os
 import platform
@@ -73,29 +102,61 @@ else:
     VENV_SITEPACKAGES_FOLDER = os.path.join(VENV_FOLDER, "Lib", PYTHON_VERSION, "site-packages")
 
 
-def replace_macros(template_line):
+macro_lookup_ext = None
+python_path_ext = None
+development_environment_ext = None
+
+try:
+    import rehome_repository_ext
+
+    if hasattr(rehome_repository_ext, "development_environment_ext"):
+        development_environment_ext = rehome_repository_ext.development_environment_ext
+
+    if hasattr(rehome_repository_ext, "macro_lookup_ext"):
+        macro_lookup_ext = rehome_repository_ext.macro_lookup_ext
+    
+    if hasattr(rehome_repository_ext, "python_path_ext"):
+        python_path_ext = rehome_repository_ext.python_path_ext
+
+except ImportError as imperr:
+    pass
+
+
+def replace_macros(template_line: str):
     """
         Perform a simple replacement any macros found in the template line passed to us.
     """
 
+    macro_lookup = collections.OrderedDict()
+
+    macro_lookup[r"${TMPLT:HOME}"] = HOME_FOLDER.replace("\\", "\\\\")
+    macro_lookup[r"${TMPLT:HOME_CONFIG}"] = CONFIG_FOLDER.replace("\\", "\\\\")
+    macro_lookup[r"${TMPLT:PYTHON_VERSION}"] = PYTHON_VERSION.replace("\\", "\\\\")
+    macro_lookup[r"${TMPLT:REPOSITORY_FOLDER}"] = REPOSITORY_FOLDER.replace("\\", "\\\\")
+    macro_lookup[r"${TMPLT:REPOSITORY_ENVIRONMENT_FILE}"] = REPOSITORY_ENVIRONMENT_FILE.replace("\\", "\\\\")
+    macro_lookup[r"${TMPLT:REPOSITORY_PACKAGES_FOLDER}"] = REPOSITORY_PACKAGES_FOLDER.replace("\\", "\\\\")
+    macro_lookup[r"${TMPLT:REPOSITORY_SERVICE_FOLDER}"] = REPOSITORY_PACKAGES_FOLDER.replace("\\", "\\\\")
+    macro_lookup[r"${TMPLT:REPOSITORY_TOOLS_FOLDER}"] = REPOSITORY_TOOLS_FOLDER.replace("\\", "\\\\")
+    macro_lookup[r"${TMPLT:VENV_FOLDER}"] = VENV_FOLDER.replace("\\", "\\\\")
+    macro_lookup[r"${TMPLT:VENV_BIN_FOLDER}"] = VENV_BIN_FOLDER.replace("\\", "\\\\")
+    macro_lookup[r"${TMPLT:VENV_PYTHON_BINARY}"] = VENV_PYTHON_BINARY.replace("\\", "\\\\")
+    macro_lookup[r"${TMPLT:VENV_ACTIVATE_SCRIPT}"] = VENV_ACTIVATE_SCRIPT.replace("\\", "\\\\")
+    macro_lookup[r"${TMPLT:VENV_SITEPACKAGES_FOLDER}"] = VENV_SITEPACKAGES_FOLDER.replace("\\", "\\\\")
+    macro_lookup[r"${TMPLT:WORKSPACES_FOLDER}"] = WORKSPACES_FOLDER.replace("\\", "\\\\")
+
+    if macro_lookup_ext is not None:
+        macro_lookup_ext(macro_lookup)
+
     filled_line = template_line
 
-    filled_line = filled_line.replace(r"${TMPLT:HOME}", HOME_FOLDER.replace("\\", "\\\\"))
-    filled_line = filled_line.replace(r"${TMPLT:HOME_CONFIG}", CONFIG_FOLDER.replace("\\", "\\\\"))
-    filled_line = filled_line.replace(r"${TMPLT:PYTHON_VERSION}", PYTHON_VERSION.replace("\\", "\\\\"))
-    filled_line = filled_line.replace(r"${TMPLT:REPOSITORY_FOLDER}", REPOSITORY_FOLDER.replace("\\", "\\\\"))
-    filled_line = filled_line.replace(r"${TMPLT:REPOSITORY_ENVIRONMENT_FILE}", REPOSITORY_ENVIRONMENT_FILE.replace("\\", "\\\\"))
-    filled_line = filled_line.replace(r"${TMPLT:REPOSITORY_PACKAGES_FOLDER}", REPOSITORY_PACKAGES_FOLDER.replace("\\", "\\\\"))
-    filled_line = filled_line.replace(r"${TMPLT:REPOSITORY_SERVICE_FOLDER}", REPOSITORY_PACKAGES_FOLDER.replace("\\", "\\\\"))
-    filled_line = filled_line.replace(r"${TMPLT:REPOSITORY_TOOLS_FOLDER}", REPOSITORY_TOOLS_FOLDER.replace("\\", "\\\\"))
-    filled_line = filled_line.replace(r"${TMPLT:VENV_FOLDER}", VENV_FOLDER.replace("\\", "\\\\"))
-    filled_line = filled_line.replace(r"${TMPLT:VENV_BIN_FOLDER}", VENV_BIN_FOLDER)
-    filled_line = filled_line.replace(r"${TMPLT:VENV_PYTHON_BINARY}", VENV_PYTHON_BINARY.replace("\\", "\\\\"))
-    filled_line = filled_line.replace(r"${TMPLT:VENV_ACTIVATE_SCRIPT}", VENV_ACTIVATE_SCRIPT.replace("\\", "\\\\"))
-    filled_line = filled_line.replace(r"${TMPLT:VENV_SITEPACKAGES_FOLDER}", VENV_SITEPACKAGES_FOLDER.replace("\\", "\\\\"))
-    filled_line = filled_line.replace(r"${TMPLT:WORKSPACES_FOLDER}", WORKSPACES_FOLDER.replace("\\", "\\\\"))
+    macrolist = macro_lookup.keys()
+
+    for macro in macrolist:
+        rvalue = macro_lookup[macro]
+        filled_line = filled_line.replace(macro, rvalue)
 
     return filled_line
+
 
 def generate_directories():
 
@@ -104,16 +165,20 @@ def generate_directories():
 
     return
 
+
 def generate_python_path():
 
-    #TODO: Add any PYTHONPATH customizations here.
-
-    python_path = "{}/packages:{}/service:{}/testroots/testplus:{}".format(
+    python_path = "{}/testroots/testbase:{}/packages:{}/service:{}".format(
         REPOSITORY_SOURCE_FOLDER,
         REPOSITORY_SOURCE_FOLDER,
         REPOSITORY_SOURCE_FOLDER,
         VENV_SITEPACKAGES_FOLDER)
+
+    if python_path_ext is not None:
+        python_path = python_path_ext(python_path)
+
     return python_path
+
 
 def generate_development_env_file():
 
@@ -131,11 +196,13 @@ def generate_development_env_file():
         envf.write(os.linesep)
         envf.write(os.linesep)
 
-        #TODO: Add the setting of any other '.env' environment variables here.
+        if development_environment_ext is not None:
+            development_environment_ext(envf)
 
         envf.write(os.linesep)
 
     return
+
 
 def generate_vscode_workspace_files():
     # Go through all of the VSCODE workspace templates and generate the 'code-workspace' files homed to the
@@ -171,6 +238,9 @@ def generate_vscode_workspace_files():
                 for tline in template_lines:
                     fline = replace_macros(tline)
                     wf.write(fline)
+
+    return
+
 
 def rehome_repository_main():
 
